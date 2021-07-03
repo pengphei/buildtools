@@ -2178,9 +2178,10 @@ mips*-mti-linux*)
 	gnu_ld=yes
 	gas=yes
 	;;
-mipsel-*-haiku*)
-    target_cpu_default="MASK_ABICALLS"
-    tm_file="elfos.h ${tm_file} haiku.h mips/haiku.h haiku-stdint.h"
+mips*-*-haiku*)
+	extra_headers="loongson.h msa.h"
+	target_cpu_default="MASK_ABICALLS"
+    tm_file="dbxelf.h elfos.h ${tm_file} haiku.h mips/haiku.h haiku-stdint.h"
     tmake_file="${tmake_file} mips/t-elf t-haiku"
     ;;
 mips*-*-linux*)				# Linux MIPS, either endian.

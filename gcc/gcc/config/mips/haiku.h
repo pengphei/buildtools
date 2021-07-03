@@ -25,11 +25,16 @@ Boston, MA 02111-1307, USA.  */
     {									\
 	builtin_define ("__HAIKU__");					\
 	builtin_define ("__MIPS__");					\
-	builtin_define ("__MIPSEL__");					\
-	builtin_define ("_MIPSEL_");					\
+   	if (POINTER_SIZE == 64) {					\
+        	builtin_define ("__MIPS64EL__");			\
+		builtin_define ("_MIPS64EL_");				\
+	} else {							\
+		builtin_define ("__MIPSEL__");				\
+		builtin_define ("_MIPSEL_");				\
+	}								\
 	builtin_define ("__stdcall=__attribute__((__stdcall__))");	\
 	builtin_define ("__cdecl=__attribute__((__cdecl__))");		\
-    builtin_define ("__STDC_ISO_10646__=201103L"); \
+    	builtin_define ("__STDC_ISO_10646__=201103L"); \
 	builtin_assert ("system=haiku");					\
 	if (flag_pic)							\
 	  {								\
@@ -40,5 +45,5 @@ Boston, MA 02111-1307, USA.  */
   while (0)
 
 #undef	LINK_SPEC
-#define LINK_SPEC "%{!o*:-o %b} -m elf_mipsel_haiku %{!r:-shared} %{nostart:-e 0}"
+#define LINK_SPEC "%{!o*:-o %b} -G0 -m elf_mipsel_haiku %{!r:-shared} %{nostart:-e 0}"
 
