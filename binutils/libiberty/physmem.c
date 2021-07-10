@@ -91,7 +91,7 @@ physmem_total (void)
   }
 #endif
 
-#if HAVE_PSTAT_GETSTATIC
+#if HAVE_PSTAT_GETSTATIC && HAVE_SYS_PSTAT_H
   { /* This works on hpux11.  */
     struct pst_static pss;
     if (0 <= pstat_getstatic (&pss, sizeof pss, 1, 0))
@@ -195,7 +195,7 @@ physmem_available (void)
   }
 #endif
 
-#if HAVE_PSTAT_GETSTATIC && HAVE_PSTAT_GETDYNAMIC
+#if HAVE_PSTAT_GETSTATIC && HAVE_PSTAT_GETDYNAMIC && HAVE_SYS_PSTAT_H
   { /* This works on hpux11.  */
     struct pst_static pss;
     struct pst_dynamic psd;
