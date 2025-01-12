@@ -981,6 +981,15 @@ loongarch*-*-linux*)
 	esac
 	md_unwind_header=loongarch/linux-unwind.h
 	;;
+loongarch*-*-*)
+	extra_parts="$extra_parts crtfastmath.o"
+	tmake_file="${tmake_file} t-crtfm loongarch/t-crtstuff"
+	case ${host} in
+	  *)
+	    tmake_file="${tmake_file} t-slibgcc-libgcc"
+	    ;;
+	esac
+	;;
 m32r-*-elf*)
 	tmake_file="$tmake_file m32r/t-m32r t-fdpbit"
 	extra_parts="$extra_parts crtinit.o crtfini.o"

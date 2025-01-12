@@ -2544,6 +2544,17 @@ loongarch*-*-linux*)
 	gcc_cv_initfini_array=yes
 	;;
 
+loongarch*-*-haiku*)
+	tm_file="elfos.h haiku.h ${tm_file} loongarch/haiku.h haiku-stdint.h"
+	tmake_file="${tmake_file} t-haiku loongarch/t-haiku"
+	gnu_ld=yes
+	gas=yes
+
+	# Force .init_array support.  The configure script cannot always
+	# automatically detect that GAS supports it, yet we require it.
+	gcc_cv_initfini_array=yes
+	;;
+
 mips*-*-netbsd*)			# NetBSD/mips, either endian.
 	target_cpu_default="MASK_ABICALLS"
 	tm_file="elfos.h ${tm_file} mips/elf.h ${nbsd_tm_file} mips/netbsd.h"
@@ -4986,6 +4997,10 @@ case "${target}" in
 			abi_pattern="lp64[dfs]"
 			abi_default="lp64d"
 			;;
+		loongarch64-*-haiku*)
+			abi_pattern="lp64[dfs]"
+			abi_default="lp64d"
+			;;
 		*)
 			echo "Unsupported target ${target}." 1>&2
 			exit 1
@@ -4999,6 +5014,7 @@ case "${target}" in
 		case ${target} in
 		  *-linux-gnu*)  triplet_os="linux-gnu";;
 		  *-linux-musl*) triplet_os="linux-musl";;
+		  *-haiku*) triplet_os="haiku";;
 		  *)
 			  echo "Unsupported target ${target}." 1>&2
 			  exit 1
