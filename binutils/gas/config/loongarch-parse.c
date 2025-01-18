@@ -184,7 +184,11 @@ reloc (const char *op_c_str, const char *id_c_str, offsetT addend)
   if (0 == strcmp (op_c_str, "plt"))
     btype = BFD_RELOC_LARCH_B26;
   else
-    btype = loongarch_larch_reloc_name_lookup (NULL, op_c_str);
+    {
+      btype = loongarch_larch_reloc_name_lookup (NULL, op_c_str);
+      if (btype == BFD_RELOC_NONE)
+	as_fatal (_("unsupported modifier %s"), op_c_str);
+    }
 
   if (id_c_str)
   {
@@ -373,7 +377,7 @@ emit_if_else (void)
 }
 
 
-#line 377 "config/loongarch-parse.c"
+#line 381 "config/loongarch-parse.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -450,12 +454,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 325 "./config/loongarch-parse.y"
+#line 329 "./config/loongarch-parse.y"
 
 char *c_str;
 offsetT imm;
 
-#line 459 "config/loongarch-parse.c"
+#line 463 "config/loongarch-parse.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -906,11 +910,11 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   339,   339,   340,   341,   342,   343,   347,   348,   349,
-     353,   354,   355,   356,   357,   361,   362,   363,   364,   368,
-     369,   370,   374,   375,   376,   380,   381,   382,   383,   384,
-     388,   389,   390,   394,   395,   399,   400,   404,   405,   409,
-     410,   414,   415,   419,   420,   424
+       0,   343,   343,   344,   345,   346,   347,   351,   352,   353,
+     357,   358,   359,   360,   361,   365,   366,   367,   368,   372,
+     373,   374,   378,   379,   380,   384,   385,   386,   387,   388,
+     392,   393,   394,   398,   399,   403,   404,   408,   409,   413,
+     414,   418,   419,   423,   424,   428
 };
 #endif
 
@@ -1523,187 +1527,187 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* primary_expression: INTEGER  */
-#line 339 "./config/loongarch-parse.y"
+#line 343 "./config/loongarch-parse.y"
                   {emit_const ((yyvsp[0].imm));}
-#line 1529 "config/loongarch-parse.c"
+#line 1533 "config/loongarch-parse.c"
     break;
 
   case 3: /* primary_expression: IDENTIFIER  */
-#line 340 "./config/loongarch-parse.y"
+#line 344 "./config/loongarch-parse.y"
                      {emit_const_var ((yyvsp[0].c_str));}
-#line 1535 "config/loongarch-parse.c"
+#line 1539 "config/loongarch-parse.c"
     break;
 
   case 5: /* primary_expression: '%' IDENTIFIER '(' IDENTIFIER addend ')'  */
-#line 342 "./config/loongarch-parse.y"
+#line 346 "./config/loongarch-parse.y"
                                                    {reloc ((yyvsp[-4].c_str), (yyvsp[-2].c_str), (yyvsp[-1].imm)); free ((yyvsp[-4].c_str)); free ((yyvsp[-2].c_str));}
-#line 1541 "config/loongarch-parse.c"
+#line 1545 "config/loongarch-parse.c"
     break;
 
   case 6: /* primary_expression: '%' IDENTIFIER '(' INTEGER addend ')'  */
-#line 343 "./config/loongarch-parse.y"
+#line 347 "./config/loongarch-parse.y"
                                                 {reloc ((yyvsp[-4].c_str), NULL, (yyvsp[-2].imm) + (yyvsp[-1].imm)); free ((yyvsp[-4].c_str));}
-#line 1547 "config/loongarch-parse.c"
+#line 1551 "config/loongarch-parse.c"
     break;
 
   case 7: /* addend: addend '-' INTEGER  */
-#line 347 "./config/loongarch-parse.y"
+#line 351 "./config/loongarch-parse.y"
                              {(yyval.imm) -= (yyvsp[0].imm);}
-#line 1553 "config/loongarch-parse.c"
+#line 1557 "config/loongarch-parse.c"
     break;
 
   case 8: /* addend: addend '+' INTEGER  */
-#line 348 "./config/loongarch-parse.y"
+#line 352 "./config/loongarch-parse.y"
                              {(yyval.imm) += (yyvsp[0].imm);}
-#line 1559 "config/loongarch-parse.c"
+#line 1563 "config/loongarch-parse.c"
     break;
 
   case 9: /* addend: %empty  */
-#line 349 "./config/loongarch-parse.y"
+#line 353 "./config/loongarch-parse.y"
           {(yyval.imm) = 0;}
-#line 1565 "config/loongarch-parse.c"
+#line 1569 "config/loongarch-parse.c"
     break;
 
   case 11: /* unary_expression: '+' unary_expression  */
-#line 354 "./config/loongarch-parse.y"
+#line 358 "./config/loongarch-parse.y"
                                {emit_unary ('+');}
-#line 1571 "config/loongarch-parse.c"
+#line 1575 "config/loongarch-parse.c"
     break;
 
   case 12: /* unary_expression: '-' unary_expression  */
-#line 355 "./config/loongarch-parse.y"
+#line 359 "./config/loongarch-parse.y"
                                {emit_unary ('-');}
-#line 1577 "config/loongarch-parse.c"
+#line 1581 "config/loongarch-parse.c"
     break;
 
   case 13: /* unary_expression: '~' unary_expression  */
-#line 356 "./config/loongarch-parse.y"
+#line 360 "./config/loongarch-parse.y"
                                {emit_unary ('~');}
-#line 1583 "config/loongarch-parse.c"
+#line 1587 "config/loongarch-parse.c"
     break;
 
   case 14: /* unary_expression: '!' unary_expression  */
-#line 357 "./config/loongarch-parse.y"
+#line 361 "./config/loongarch-parse.y"
                                {emit_unary ('!');}
-#line 1589 "config/loongarch-parse.c"
+#line 1593 "config/loongarch-parse.c"
     break;
 
   case 16: /* multiplicative_expression: multiplicative_expression '*' unary_expression  */
-#line 362 "./config/loongarch-parse.y"
+#line 366 "./config/loongarch-parse.y"
                                                          {emit_bin ('*');}
-#line 1595 "config/loongarch-parse.c"
+#line 1599 "config/loongarch-parse.c"
     break;
 
   case 17: /* multiplicative_expression: multiplicative_expression '/' unary_expression  */
-#line 363 "./config/loongarch-parse.y"
+#line 367 "./config/loongarch-parse.y"
                                                          {emit_bin ('/');}
-#line 1601 "config/loongarch-parse.c"
+#line 1605 "config/loongarch-parse.c"
     break;
 
   case 18: /* multiplicative_expression: multiplicative_expression '%' unary_expression  */
-#line 364 "./config/loongarch-parse.y"
+#line 368 "./config/loongarch-parse.y"
                                                          {emit_bin ('%');}
-#line 1607 "config/loongarch-parse.c"
+#line 1611 "config/loongarch-parse.c"
     break;
 
   case 20: /* additive_expression: additive_expression '+' multiplicative_expression  */
-#line 369 "./config/loongarch-parse.y"
+#line 373 "./config/loongarch-parse.y"
                                                             {emit_bin ('+');}
-#line 1613 "config/loongarch-parse.c"
+#line 1617 "config/loongarch-parse.c"
     break;
 
   case 21: /* additive_expression: additive_expression '-' multiplicative_expression  */
-#line 370 "./config/loongarch-parse.y"
+#line 374 "./config/loongarch-parse.y"
                                                             {emit_bin ('-');}
-#line 1619 "config/loongarch-parse.c"
+#line 1623 "config/loongarch-parse.c"
     break;
 
   case 23: /* shift_expression: shift_expression LEFT_OP additive_expression  */
-#line 375 "./config/loongarch-parse.y"
+#line 379 "./config/loongarch-parse.y"
                                                        {emit_bin (LEFT_OP);}
-#line 1625 "config/loongarch-parse.c"
+#line 1629 "config/loongarch-parse.c"
     break;
 
   case 24: /* shift_expression: shift_expression RIGHT_OP additive_expression  */
-#line 376 "./config/loongarch-parse.y"
+#line 380 "./config/loongarch-parse.y"
                                                         {emit_bin (RIGHT_OP);}
-#line 1631 "config/loongarch-parse.c"
+#line 1635 "config/loongarch-parse.c"
     break;
 
   case 26: /* relational_expression: relational_expression '<' shift_expression  */
-#line 381 "./config/loongarch-parse.y"
+#line 385 "./config/loongarch-parse.y"
                                                      {emit_bin ('<');}
-#line 1637 "config/loongarch-parse.c"
+#line 1641 "config/loongarch-parse.c"
     break;
 
   case 27: /* relational_expression: relational_expression '>' shift_expression  */
-#line 382 "./config/loongarch-parse.y"
+#line 386 "./config/loongarch-parse.y"
                                                      {emit_bin ('>');}
-#line 1643 "config/loongarch-parse.c"
+#line 1647 "config/loongarch-parse.c"
     break;
 
   case 28: /* relational_expression: relational_expression LE_OP shift_expression  */
-#line 383 "./config/loongarch-parse.y"
+#line 387 "./config/loongarch-parse.y"
                                                        {emit_bin (LE_OP);}
-#line 1649 "config/loongarch-parse.c"
+#line 1653 "config/loongarch-parse.c"
     break;
 
   case 29: /* relational_expression: relational_expression GE_OP shift_expression  */
-#line 384 "./config/loongarch-parse.y"
+#line 388 "./config/loongarch-parse.y"
                                                        {emit_bin (GE_OP);}
-#line 1655 "config/loongarch-parse.c"
+#line 1659 "config/loongarch-parse.c"
     break;
 
   case 31: /* equality_expression: equality_expression EQ_OP relational_expression  */
-#line 389 "./config/loongarch-parse.y"
+#line 393 "./config/loongarch-parse.y"
                                                           {emit_bin (EQ_OP);}
-#line 1661 "config/loongarch-parse.c"
+#line 1665 "config/loongarch-parse.c"
     break;
 
   case 32: /* equality_expression: equality_expression NE_OP relational_expression  */
-#line 390 "./config/loongarch-parse.y"
+#line 394 "./config/loongarch-parse.y"
                                                           {emit_bin (NE_OP);}
-#line 1667 "config/loongarch-parse.c"
+#line 1671 "config/loongarch-parse.c"
     break;
 
   case 34: /* and_expression: and_expression '&' equality_expression  */
-#line 395 "./config/loongarch-parse.y"
+#line 399 "./config/loongarch-parse.y"
                                                  {emit_bin ('&');}
-#line 1673 "config/loongarch-parse.c"
+#line 1677 "config/loongarch-parse.c"
     break;
 
   case 36: /* exclusive_or_expression: exclusive_or_expression '^' and_expression  */
-#line 400 "./config/loongarch-parse.y"
+#line 404 "./config/loongarch-parse.y"
                                                      {emit_bin ('^');}
-#line 1679 "config/loongarch-parse.c"
+#line 1683 "config/loongarch-parse.c"
     break;
 
   case 38: /* inclusive_or_expression: inclusive_or_expression '|' exclusive_or_expression  */
-#line 405 "./config/loongarch-parse.y"
+#line 409 "./config/loongarch-parse.y"
                                                               {emit_bin ('|');}
-#line 1685 "config/loongarch-parse.c"
+#line 1689 "config/loongarch-parse.c"
     break;
 
   case 40: /* logical_and_expression: logical_and_expression AND_OP inclusive_or_expression  */
-#line 410 "./config/loongarch-parse.y"
+#line 414 "./config/loongarch-parse.y"
                                                                 {emit_bin (AND_OP);}
-#line 1691 "config/loongarch-parse.c"
+#line 1695 "config/loongarch-parse.c"
     break;
 
   case 42: /* logical_or_expression: logical_or_expression OR_OP logical_and_expression  */
-#line 415 "./config/loongarch-parse.y"
+#line 419 "./config/loongarch-parse.y"
                                                              {emit_bin (OR_OP);}
-#line 1697 "config/loongarch-parse.c"
+#line 1701 "config/loongarch-parse.c"
     break;
 
   case 44: /* conditional_expression: logical_or_expression '?' expression ':' conditional_expression  */
-#line 420 "./config/loongarch-parse.y"
+#line 424 "./config/loongarch-parse.y"
                                                                           {emit_if_else ();}
-#line 1703 "config/loongarch-parse.c"
+#line 1707 "config/loongarch-parse.c"
     break;
 
 
-#line 1707 "config/loongarch-parse.c"
+#line 1711 "config/loongarch-parse.c"
 
       default: break;
     }
@@ -1896,6 +1900,6 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 426 "./config/loongarch-parse.y"
+#line 430 "./config/loongarch-parse.y"
 
 

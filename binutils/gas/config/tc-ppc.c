@@ -1,5 +1,5 @@
 /* tc-ppc.c -- Assemble for the PowerPC or POWER (RS/6000)
-   Copyright (C) 1994-2023 Free Software Foundation, Inc.
+   Copyright (C) 1994-2024 Free Software Foundation, Inc.
    Written by Ian Lance Taylor, Cygnus Support.
 
    This file is part of GAS, the GNU Assembler.
@@ -279,7 +279,7 @@ const pseudo_typeS md_pseudo_table[] =
 /* Structure to hold information about predefined registers.  */
 struct pd_reg
   {
-    const char *name;
+    char name[6];
     unsigned short value;
     unsigned short flags;
   };
@@ -351,6 +351,7 @@ static const struct pd_reg pre_defined_registers[] =
   { "ctr", 9, PPC_OPERAND_SPR },
   { "dar", 19, PPC_OPERAND_SPR },
   { "dec", 22, PPC_OPERAND_SPR },
+  { "dsisr", 18, PPC_OPERAND_SPR },
 
   /* Dense Math Registers.  */
   { "dm0", 0, PPC_OPERAND_DMR },
@@ -361,8 +362,6 @@ static const struct pd_reg pre_defined_registers[] =
   { "dm5", 5, PPC_OPERAND_DMR },
   { "dm6", 6, PPC_OPERAND_DMR },
   { "dm7", 7, PPC_OPERAND_DMR },
-
-  { "dsisr", 18, PPC_OPERAND_SPR },
 
   /* Floating point registers */
   { "f.0", 0, PPC_OPERAND_FPR },
@@ -1392,6 +1391,8 @@ PowerPC options:\n"));
 -mpower9, -mpwr9        generate code for Power9 architecture\n"));
   fprintf (stream, _("\
 -mpower10, -mpwr10      generate code for Power10 architecture\n"));
+  fprintf (stream, _("\
+-mpower11, -mpwr11      generate code for Power11 architecture\n"));
   fprintf (stream, _("\
 -mlibresoc              generate code for Libre-SOC architecture\n"));
   fprintf (stream, _("\

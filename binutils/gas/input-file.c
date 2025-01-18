@@ -1,5 +1,5 @@
 /* input_file.c - Deal with Input Files -
-   Copyright (C) 1987-2023 Free Software Foundation, Inc.
+   Copyright (C) 1987-2024 Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler.
 
@@ -240,9 +240,20 @@ input_file_give_next_buffer (char *where /* Where to place 1st character of new 
      Since the assembler shouldn't do any output to stdout, we
      don't bother to synch output and input.  */
   if (preprocess)
-    size = do_scrub_chars (input_file_get, where, BUFFER_SIZE);
+    size = do_scrub_chars (input_file_get, where, BUFFER_SIZE,
+                           multibyte_handling == multibyte_warn);
   else
-    size = input_file_get (where, BUFFER_SIZE);
+    {
+      size = input_file_get (where, BUFFER_SIZE);
+
+      if (multibyte_handling == multibyte_warn)
+	{
+	  const unsigned char *start = (const unsigned char *) where;
+
+	  (void) scan_for_multibyte_characters (start, start + size,
+						true /* Generate warnings */);
+	}
+    }
 
   if (size)
     return_value = where + size;

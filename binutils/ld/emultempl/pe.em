@@ -18,7 +18,7 @@ esac
 rm -f e${EMULATION_NAME}.c
 (echo;echo;echo;echo;echo)>e${EMULATION_NAME}.c # there, now line numbers match ;-)
 fragment <<EOF
-/* Copyright (C) 1995-2023 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2024 Free Software Foundation, Inc.
 
    This file is part of the GNU Binutils.
 
@@ -234,84 +234,6 @@ fragment <<EOF
 #define MERGE_RDATA_V2 ${default_merge_rdata}
 
 /* PE format extra command line options.  */
-
-/* Used for setting flags in the PE header.  */
-enum options
-{
-  OPTION_BASE_FILE = 300 + 1,
-  OPTION_DLL,
-  OPTION_FILE_ALIGNMENT,
-  OPTION_IMAGE_BASE,
-  OPTION_MAJOR_IMAGE_VERSION,
-  OPTION_MAJOR_OS_VERSION,
-  OPTION_MAJOR_SUBSYSTEM_VERSION,
-  OPTION_MINOR_IMAGE_VERSION,
-  OPTION_MINOR_OS_VERSION,
-  OPTION_MINOR_SUBSYSTEM_VERSION,
-  OPTION_SECTION_ALIGNMENT,
-  OPTION_STACK,
-  OPTION_SUBSYSTEM,
-  OPTION_HEAP,
-  OPTION_SUPPORT_OLD_CODE,
-  OPTION_OUT_DEF,
-  OPTION_EXPORT_ALL,
-  OPTION_EXCLUDE_SYMBOLS,
-  OPTION_EXCLUDE_ALL_SYMBOLS,
-  OPTION_KILL_ATS,
-  OPTION_STDCALL_ALIASES,
-  OPTION_ENABLE_STDCALL_FIXUP,
-  OPTION_DISABLE_STDCALL_FIXUP,
-  OPTION_THUMB_ENTRY,
-  OPTION_WARN_DUPLICATE_EXPORTS,
-  OPTION_IMP_COMPAT,
-  OPTION_ENABLE_AUTO_IMAGE_BASE,
-  OPTION_DISABLE_AUTO_IMAGE_BASE,
-  OPTION_DLL_SEARCH_PREFIX,
-  OPTION_NO_DEFAULT_EXCLUDES,
-  OPTION_DLL_ENABLE_AUTO_IMPORT,
-  OPTION_DLL_DISABLE_AUTO_IMPORT,
-  OPTION_ENABLE_EXTRA_PE_DEBUG,
-  OPTION_EXCLUDE_LIBS,
-  OPTION_DLL_ENABLE_RUNTIME_PSEUDO_RELOC,
-  OPTION_DLL_DISABLE_RUNTIME_PSEUDO_RELOC,
-  OPTION_LARGE_ADDRESS_AWARE,
-  OPTION_DISABLE_LARGE_ADDRESS_AWARE,
-  OPTION_DLL_ENABLE_RUNTIME_PSEUDO_RELOC_V1,
-  OPTION_DLL_ENABLE_RUNTIME_PSEUDO_RELOC_V2,
-  OPTION_EXCLUDE_MODULES_FOR_IMPLIB,
-  OPTION_USE_NUL_PREFIXED_IMPORT_TABLES,
-  OPTION_NO_LEADING_UNDERSCORE,
-  OPTION_LEADING_UNDERSCORE,
-  OPTION_ENABLE_LONG_SECTION_NAMES,
-  OPTION_DISABLE_LONG_SECTION_NAMES,
-/* DLLCharacteristics flags.  */
-  OPTION_DYNAMIC_BASE,
-  OPTION_FORCE_INTEGRITY,
-  OPTION_NX_COMPAT,
-  OPTION_NO_ISOLATION,
-  OPTION_NO_SEH,
-  OPTION_NO_BIND,
-  OPTION_WDM_DRIVER,
-  OPTION_TERMINAL_SERVER_AWARE,
-/* Determinism.  */
-  OPTION_INSERT_TIMESTAMP,
-  OPTION_NO_INSERT_TIMESTAMP,
-  OPTION_BUILD_ID,
-#ifdef PDB_H
-  OPTION_PDB,
-#endif
-  OPTION_ENABLE_RELOC_SECTION,
-  OPTION_DISABLE_RELOC_SECTION,
-/* DLL Characteristics flags.  */
-  OPTION_DISABLE_DYNAMIC_BASE,
-  OPTION_DISABLE_FORCE_INTEGRITY,
-  OPTION_DISABLE_NX_COMPAT,
-  OPTION_DISABLE_NO_ISOLATION,
-  OPTION_DISABLE_NO_SEH,
-  OPTION_DISABLE_NO_BIND,
-  OPTION_DISABLE_WDM_DRIVER,
-  OPTION_DISABLE_TERMINAL_SERVER_AWARE
-};
 
 static void
 gld${EMULATION_NAME}_add_options
@@ -1355,7 +1277,7 @@ pecoff_checksum_contents (bfd *abfd,
       if (bfd_seek (abfd, filepos, SEEK_SET) != 0)
 	return 0;
 
-      status = bfd_bread (&b, (bfd_size_type) 1, abfd);
+      status = bfd_read (&b, 1, abfd);
       if (status < 1)
 	{
 	  break;
@@ -1446,7 +1368,7 @@ write_build_id (bfd *abfd)
   if (bfd_seek (abfd, asec->filepos + link_order->offset, SEEK_SET) != 0)
     return 0;
 
-  if (bfd_bwrite (contents, sizeof (*ext), abfd) != sizeof (*ext))
+  if (bfd_write (contents, sizeof (*ext), abfd) != sizeof (*ext))
     return 0;
 
 #ifdef PDB_H
@@ -2464,8 +2386,8 @@ gld${EMULATION_NAME}_open_dynamic_archive
 			    search->name and the start of the format string.  */
 			 + 2);
 
-  sprintf (full_string, "%s/", search->name);
-  base_string = full_string + strlen (full_string);
+  base_string = stpcpy (full_string, search->name);
+  *base_string++ = '/';
 
   for (i = 0; libname_fmt[i].format; i++)
     {
@@ -2511,7 +2433,7 @@ then
 # Scripts compiled in.
 
 # sed commands to quote an ld script as a C string.
-sc="-f stringify.sed"
+sc="-f ${srcdir}/emultempl/stringify.sed"
 
 fragment <<EOF
 {

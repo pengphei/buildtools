@@ -64,6 +64,12 @@ none of the backends recognised the file format.
 @code{bfd_error_file_ambiguously_recognized} -
 more than one backend recognised the file format.
 @end itemize
+When calling bfd_check_format (or bfd_check_format_matches),
+any underlying file descriptor will be kept open for the
+duration of the call.  This is done to avoid races when
+another thread calls bfd_cache_close_all.  In this scenario,
+the thread calling bfd_check_format must call bfd_cache_close
+itself.
 
 @end deftypefn
 @findex bfd_check_format_matches

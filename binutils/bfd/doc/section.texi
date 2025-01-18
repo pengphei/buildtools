@@ -304,6 +304,9 @@ typedef struct bfd_section
      TMS320C54X only.  */
 #define SEC_TIC54X_BLOCK           0x10000000
 
+  /* This section has the SHF_X86_64_LARGE flag.  This is ELF x86-64 only.  */
+#define SEC_ELF_LARGE              0x10000000
+
   /* Conditionally link this section; do not link if there are no
      references found to any symbol in the section.  This is for TI
      TMS320C54X only.  */
@@ -363,6 +366,9 @@ typedef struct bfd_section
 
   /* Nonzero if this section uses RELA relocations, rather than REL.  */
   unsigned int use_rela_p:1;
+
+  /* Nonzero if this section contents are mmapped, rather than malloced.  */
+  unsigned int mmapped_p:1;
 
   /* Bits used by various backends.  The generic code doesn't touch
      these fields.  */
@@ -813,9 +819,9 @@ Returns group name if @var{sec} is a member of a group.
 Remove all members of @var{group} from the output.
 
 @end deftypefn
-@findex _bfd_section_size_insane
-@subsubsection @code{_bfd_section_size_insane}
-@deftypefn {Function} bool _bfd_section_size_insane (bfd *abfd, asection *sec); 
+@findex bfd_section_size_insane
+@subsubsection @code{bfd_section_size_insane}
+@deftypefn {Function} bool bfd_section_size_insane (bfd *abfd, asection *sec); 
 Returns true if the given section has a size that indicates
 it cannot be read from file.  Return false if the size is OK
 or* this function can't say one way or the other.

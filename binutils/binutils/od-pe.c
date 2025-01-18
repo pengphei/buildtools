@@ -1,5 +1,5 @@
 /* od-pe.c -- dump information about a PE object file.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2024 Free Software Foundation, Inc.
    Written by Tristan Gingold, Adacore and Nick Clifton, Red Hat.
 
    This file is part of GNU Binutils.
@@ -138,7 +138,7 @@ static const struct xlat_table section_flag_xlat[] =
   { IMAGE_SCN_LNK_NRELOC_OVFL, "NRELOC OVFL" },
   { IMAGE_SCN_MEM_NOT_CACHED,  "NOT CACHED" },
   { IMAGE_SCN_MEM_NOT_PAGED,   "NOT PAGED" },
-  { IMAGE_SCN_MEM_SHARED,      "SHARED" },    
+  { IMAGE_SCN_MEM_SHARED,      "SHARED" },
   { 0, NULL }
 };
 
@@ -192,7 +192,8 @@ const struct target_specific_info targ_info[] =
   { 0x0b00, "MCore", AOUTHDRSZ }
 };
 
-static const struct target_specific_info unknown_info = { 0, "unknown", AOUTHDRSZ };
+static const struct target_specific_info unknown_info =
+  { 0, "unknown", AOUTHDRSZ };
 
 static const struct target_specific_info *
 get_target_specific_info (unsigned int machine)
@@ -203,7 +204,7 @@ get_target_specific_info (unsigned int machine)
     if (targ_info[i].machine_number == machine)
       return targ_info + i;
 
-  return & unknown_info;
+  return &unknown_info;
 }
 
 /* Display help.  */
@@ -389,7 +390,7 @@ dump_pe_file_header (bfd *                            abfd,
     {
       /* Not correct on all platforms, but works on unix.  */
       time_t t = timedat;
-      fputs (ctime (& t), stdout);
+      fputs (ctime (&t), stdout);
     }
   
   printf (_("Symbol table offset:\t\t%#08lx\n"),
@@ -415,7 +416,7 @@ dump_pe_file_header (bfd *                            abfd,
       // Fortunately, it appears that the size and layout of the
       // PEPAOUTHDR header is consistent across all architectures.
       if (bfd_seek (abfd, ihdr_off + sizeof (* ihdr), SEEK_SET) != 0
-	  || bfd_bread (& xhdr, sizeof (xhdr), abfd) != sizeof (xhdr))
+	  || bfd_read (&xhdr, sizeof (xhdr), abfd) != sizeof (xhdr))
 	printf (_("error: unable to read AOUT and PE+ headers\n"));
       else
 	{
@@ -500,7 +501,7 @@ dump_pe_file_header (bfd *                            abfd,
 	      off, aout_hdr_size);
 
       if (bfd_seek (abfd, off, SEEK_SET) != 0
-	  || bfd_bread (& xhdr.standard, size, abfd) != size)
+	  || bfd_read (&xhdr.standard, size, abfd) != size)
 	printf (_("error: unable to seek to/read AOUT header\n"));
       else
 	{
@@ -533,7 +534,7 @@ dump_pe_file_header (bfd *                            abfd,
       /* FIXME: Sanitizers might complain about reading more bytes than
 	 fit into the ImageBase field.  Find a way to solve this.  */
       if (bfd_seek (abfd, off, SEEK_SET) != 0
-	  || bfd_bread (& xhdr.ImageBase, size, abfd) != size)
+	  || bfd_read (&xhdr.ImageBase, size, abfd) != size)
 	printf (_("error: unable to seek to/read PE header\n"));
       else
 	{
@@ -590,7 +591,44 @@ dump_pe_file_header (bfd *                            abfd,
     printf (_("\n  Optional header not present\n"));
 }
 
-/* Dump the sections header.  */
+static void
+dump_alignment (unsigned int flags)
+{
+  flags &= IMAGE_SCN_ALIGN_POWER_BIT_MASK;
+
+  if (flags == IMAGE_SCN_ALIGN_8192BYTES)
+    printf (_("Align: 8192 "));
+  else if (flags == IMAGE_SCN_ALIGN_4096BYTES)
+    printf (_("Align: 4096 "));
+  else if (flags == IMAGE_SCN_ALIGN_2048BYTES)
+    printf (_("Align: 2048 "));
+  else if (flags == IMAGE_SCN_ALIGN_1024BYTES)
+    printf (_("Align: 1024 "));
+  else if (flags == IMAGE_SCN_ALIGN_512BYTES)
+    printf (_("Align: 512 "));
+  else if (flags == IMAGE_SCN_ALIGN_256BYTES)
+    printf (_("Align: 256 "));
+  else if (flags == IMAGE_SCN_ALIGN_128BYTES)
+    printf (_("Align: 128 "));
+  else if (flags == IMAGE_SCN_ALIGN_64BYTES)
+    printf (_("Align: 64 "));
+  else if (flags == IMAGE_SCN_ALIGN_32BYTES)
+    printf (_("Align: 32 "));
+  else if (flags == IMAGE_SCN_ALIGN_16BYTES)
+    printf (_("Align: 16 "));
+  else if (flags == IMAGE_SCN_ALIGN_8BYTES)
+    printf (_("Align: 8 "));
+  else if (flags == IMAGE_SCN_ALIGN_4BYTES)
+    printf (_("Align: 4 "));
+  else if (flags == IMAGE_SCN_ALIGN_2BYTES)
+    printf (_("Align: 2 "));
+  else if (flags == IMAGE_SCN_ALIGN_1BYTES)
+    printf (_("Align: 1 "));
+  else
+    printf (_("Align: *unknown* "));
+}
+
+/* Dump the section's header.  */
 
 static void
 dump_pe_sections_header (bfd *                            abfd,
@@ -632,7 +670,7 @@ dump_pe_sections_header (bfd *                            abfd,
       struct external_scnhdr scn;
       unsigned int flags;
 
-      if (bfd_bread (& scn, sizeof (scn), abfd) != sizeof (scn))
+      if (bfd_read (&scn, sizeof (scn), abfd) != sizeof (scn))
         {
           non_fatal (_("cannot read section header"));
           return;
@@ -655,12 +693,14 @@ dump_pe_sections_header (bfd *                            abfd,
       else
 	printf (_("\n            Flags: %08x: "), flags);
 
-      if (flags != 0)
-        {
-	  /* Skip the alignment bits.  */
+      if (flags & IMAGE_SCN_ALIGN_POWER_BIT_MASK)
+	{
+	  dump_alignment (flags);
 	  flags &= ~ IMAGE_SCN_ALIGN_POWER_BIT_MASK;
-          dump_flags (section_flag_xlat, flags);
-        }
+	}
+
+      if (flags != 0)
+	dump_flags (section_flag_xlat, flags);
 
       putchar ('\n');
     }
@@ -689,7 +729,7 @@ pe_dump_obj (bfd *abfd)
 
   /* Read file header.  */
   if (bfd_seek (abfd, 0, SEEK_SET) != 0
-      || bfd_bread (& fhdr, sizeof (fhdr), abfd) != sizeof (fhdr))
+      || bfd_read (&fhdr, sizeof (fhdr), abfd) != sizeof (fhdr))
     {
       non_fatal (_("cannot seek to/read file header"));
       return;
@@ -709,7 +749,7 @@ pe_dump_obj (bfd *abfd)
       struct external_PEI_IMAGE_hdr ihdr;
 
       if (bfd_seek (abfd, ihdr_offset, SEEK_SET) != 0
-	  || bfd_bread (& ihdr, sizeof (ihdr), abfd) != sizeof (ihdr))
+	  || bfd_read (&ihdr, sizeof (ihdr), abfd) != sizeof (ihdr))
 	{
 	  non_fatal (_("cannot seek to/read image header at offset %#x"),
 		     ihdr_offset);
@@ -724,7 +764,7 @@ pe_dump_obj (bfd *abfd)
 	  return;
 	}
   
-      dump_pe (abfd, & fhdr, & ihdr);
+      dump_pe (abfd, &fhdr, &ihdr);
     }
   /* See if we recognise this particular PE object file.  */
   else if (get_target_specific_info (magic)->machine_number)
@@ -732,15 +772,15 @@ pe_dump_obj (bfd *abfd)
       struct external_filehdr ehdr;
 
       if (bfd_seek (abfd, 0, SEEK_SET) != 0
-	  || bfd_bread (& ehdr, sizeof (ehdr), abfd) != sizeof (ehdr))
+	  || bfd_read (&ehdr, sizeof (ehdr), abfd) != sizeof (ehdr))
 	{
 	  non_fatal (_("cannot seek to/read image header"));
 	  return;
 	}
 
       struct external_PEI_IMAGE_hdr ihdr;
-      memcpy (& ihdr.f_magic, & ehdr, sizeof (ehdr));
-      dump_pe (abfd, NULL, & ihdr);
+      memcpy (&ihdr.f_magic, &ehdr, sizeof (ehdr));
+      dump_pe (abfd, NULL, &ihdr);
     }
   else
     {

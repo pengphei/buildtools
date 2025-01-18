@@ -1,5 +1,5 @@
 /* Routines to help build PEI-format DLLs (Win32 etc)
-   Copyright (C) 1998-2023 Free Software Foundation, Inc.
+   Copyright (C) 1998-2024 Free Software Foundation, Inc.
    Written by DJ Delorie <dj@cygnus.com>
 
    This file is part of the GNU Binutils.
@@ -1231,7 +1231,10 @@ fill_edata (bfd *abfd, struct bfd_link_info *info ATTRIBUTE_UNUSED)
   memset (edata_d, 0, edata_sz);
 
   if (pe_data (abfd)->timestamp == -1)
-    H_PUT_32 (abfd, time (0), edata_d + 4);
+    {
+      time_t now = bfd_get_current_time (0);
+      H_PUT_32 (abfd, now, edata_d + 4);
+    }
   else
     H_PUT_32 (abfd, pe_data (abfd)->timestamp, edata_d + 4);
 
@@ -2531,9 +2534,7 @@ make_one (def_file_export *exp, bfd *parent, bool include_jmp_stub)
     }
   else
     {
-      int ord;
-
-      /* { short, asciz }  */
+      /* { short, asciz } = { hint, name }  */
       if (exp->its_name)
 	len = 2 + strlen (exp->its_name) + 1;
       else
@@ -2544,13 +2545,8 @@ make_one (def_file_export *exp, bfd *parent, bool include_jmp_stub)
       d6 = xmalloc (len);
       id6->contents = d6;
       memset (d6, 0, len);
-
-      /* PR 20880:  Use exp->hint as a backup, just in case exp->ordinal
-	 contains an invalid value (-1).  */
-      ord = (exp->ordinal >= 0) ? exp->ordinal : exp->hint;
-      d6[0] = ord;
-      d6[1] = ord >> 8;
-
+      d6[0] = exp->hint & 0xff;
+      d6[1] = exp->hint >> 8;
       if (exp->its_name)
 	strcpy ((char*) d6 + 2, exp->its_name);
       else
@@ -3329,21 +3325,19 @@ pe_process_import_defs (bfd *output_bfd, struct bfd_link_info *linfo)
 					       false, false, false);
 		  if (blhe)
 		    is_undef = (blhe->type == bfd_link_hash_undefined);
+
+		  if (is_cdecl && (!blhe || !is_undef))
+		    {
+		      blhe = pe_find_cdecl_alias_match (linfo, name + 6);
+		      include_jmp_stub = true;
+		      if (blhe)
+			is_undef = (blhe->type == bfd_link_hash_undefined);
+		    }
 		}
 	      else
 		{
 		  include_jmp_stub = true;
 		  is_undef = (blhe->type == bfd_link_hash_undefined);
-		}
-
-	      if (is_cdecl
-		  && (!blhe || (blhe && blhe->type != bfd_link_hash_undefined)))
-		{
-		  sprintf (name, "%s%s",U (""), imp[i].internal_name);
-		  blhe = pe_find_cdecl_alias_match (linfo, name);
-		  include_jmp_stub = true;
-		  if (blhe)
-		    is_undef = (blhe->type == bfd_link_hash_undefined);
 		}
 
 	      free (name);
@@ -3410,22 +3404,30 @@ pe_process_import_defs (bfd *output_bfd, struct bfd_link_info *linfo)
    handled, FALSE if not.  */
 
 static unsigned int
-pe_get16 (bfd *abfd, int where)
+pe_get16 (bfd *abfd, int where, bool *fail)
 {
   unsigned char b[2];
 
-  bfd_seek (abfd, (file_ptr) where, SEEK_SET);
-  bfd_bread (b, (bfd_size_type) 2, abfd);
+  if (bfd_seek (abfd, where, SEEK_SET) != 0
+      || bfd_read (b, 2, abfd) != 2)
+    {
+      *fail = true;
+      return 0;
+    }
   return b[0] + (b[1] << 8);
 }
 
 static unsigned int
-pe_get32 (bfd *abfd, int where)
+pe_get32 (bfd *abfd, int where, bool *fail)
 {
   unsigned char b[4];
 
-  bfd_seek (abfd, (file_ptr) where, SEEK_SET);
-  bfd_bread (b, (bfd_size_type) 4, abfd);
+  if (bfd_seek (abfd, where, SEEK_SET) != 0
+      || bfd_read (b, 4, abfd) != 4)
+    {
+      *fail = true;
+      return 0;
+    }
   return b[0] + (b[1] << 8) + (b[2] << 16) + ((unsigned) b[3] << 24);
 }
 
@@ -3472,38 +3474,49 @@ pe_implied_import_dll (const char *filename)
   /* PEI dlls seem to be bfd_objects.  */
   if (!bfd_check_format (dll, bfd_object))
     {
+    notdll:
       einfo (_("%X%P: %s: this doesn't appear to be a DLL\n"), filename);
       return false;
     }
 
   /* Get pe_header, optional header and numbers of directory entries.  */
-  pe_header_offset = pe_get32 (dll, 0x3c);
+  bool fail = false;
+  pe_header_offset = pe_get32 (dll, 0x3c, &fail);
+  if (fail)
+    goto notdll;
   opthdr_ofs = pe_header_offset + 4 + 20;
 #ifdef pe_use_plus
-  num_entries = pe_get32 (dll, opthdr_ofs + 92 + 4 * 4); /*  & NumberOfRvaAndSizes.  */
+  /* NumberOfRvaAndSizes.  */
+  num_entries = pe_get32 (dll, opthdr_ofs + 92 + 4 * 4, &fail);
 #else
-  num_entries = pe_get32 (dll, opthdr_ofs + 92);
+  num_entries = pe_get32 (dll, opthdr_ofs + 92, &fail);
 #endif
+  if (fail)
+    goto notdll;
 
   /* No import or export directory entry.  */
   if (num_entries < 1)
     return false;
 
 #ifdef pe_use_plus
-  export_rva  = pe_get32 (dll, opthdr_ofs + 96 + 4 * 4);
-  export_size = pe_get32 (dll, opthdr_ofs + 100 + 4 * 4);
+  export_rva  = pe_get32 (dll, opthdr_ofs + 96 + 4 * 4, &fail);
+  export_size = pe_get32 (dll, opthdr_ofs + 100 + 4 * 4, &fail);
 #else
-  export_rva = pe_get32 (dll, opthdr_ofs + 96);
-  export_size = pe_get32 (dll, opthdr_ofs + 100);
+  export_rva = pe_get32 (dll, opthdr_ofs + 96, &fail);
+  export_size = pe_get32 (dll, opthdr_ofs + 100, &fail);
 #endif
+  if (fail)
+    goto notdll;
 
   /* No export table - nothing to export.  */
   if (export_size == 0)
     return false;
 
-  nsections = pe_get16 (dll, pe_header_offset + 4 + 2);
+  nsections = pe_get16 (dll, pe_header_offset + 4 + 2, &fail);
   secptr = (pe_header_offset + 4 + 20 +
-	    pe_get16 (dll, pe_header_offset + 4 + 16));
+	    pe_get16 (dll, pe_header_offset + 4 + 16, &fail));
+  if (fail)
+    goto notdll;
   expptr = 0;
 
   /* Get the rva and size of the export section.  */
@@ -3511,12 +3524,14 @@ pe_implied_import_dll (const char *filename)
     {
       char sname[8];
       bfd_vma secptr1 = secptr + 40 * i;
-      bfd_vma vaddr = pe_get32 (dll, secptr1 + 12);
-      bfd_vma vsize = pe_get32 (dll, secptr1 + 16);
-      bfd_vma fptr = pe_get32 (dll, secptr1 + 20);
+      bfd_vma vaddr = pe_get32 (dll, secptr1 + 12, &fail);
+      bfd_vma vsize = pe_get32 (dll, secptr1 + 16, &fail);
+      bfd_vma fptr = pe_get32 (dll, secptr1 + 20, &fail);
 
-      bfd_seek (dll, (file_ptr) secptr1, SEEK_SET);
-      bfd_bread (sname, (bfd_size_type) 8, dll);
+      if (fail
+	  || bfd_seek (dll, secptr1, SEEK_SET) != 0
+	  || bfd_read (sname, 8, dll) != 8)
+	goto notdll;
 
       if (vaddr <= export_rva && vaddr + vsize > export_rva)
 	{
@@ -3532,14 +3547,16 @@ pe_implied_import_dll (const char *filename)
   for (i = 0; i < nsections; i++)
     {
       bfd_vma secptr1 = secptr + 40 * i;
-      bfd_vma vsize = pe_get32 (dll, secptr1 + 8);
-      bfd_vma vaddr = pe_get32 (dll, secptr1 + 12);
-      bfd_vma flags = pe_get32 (dll, secptr1 + 36);
+      bfd_vma vsize = pe_get32 (dll, secptr1 + 8, &fail);
+      bfd_vma vaddr = pe_get32 (dll, secptr1 + 12, &fail);
+      bfd_vma flags = pe_get32 (dll, secptr1 + 36, &fail);
       char sec_name[9];
 
       sec_name[8] = '\0';
-      bfd_seek (dll, (file_ptr) secptr1 + 0, SEEK_SET);
-      bfd_bread (sec_name, (bfd_size_type) 8, dll);
+      if (fail
+	  || bfd_seek (dll, secptr1 + 0, SEEK_SET) != 0
+	  || bfd_read (sec_name, 8, dll) != 8)
+	goto notdll;
 
       if (strcmp(sec_name,".data") == 0)
 	{
@@ -3574,8 +3591,9 @@ pe_implied_import_dll (const char *filename)
     }
 
   expdata = xmalloc (export_size);
-  bfd_seek (dll, (file_ptr) expptr, SEEK_SET);
-  bfd_bread (expdata, (bfd_size_type) export_size, dll);
+  if (bfd_seek (dll, expptr, SEEK_SET) != 0
+      || bfd_read (expdata, export_size, dll) != export_size)
+    goto notdll;
   erva = (char *) expdata - export_rva;
 
   if (pe_def_file == 0)
